@@ -80,10 +80,10 @@ inline bool
 Clusterizer::candidateEndedLeft(State const & state, const uint16_t& testStrip) const {
   uint16_t holes = state.lastStripLeft - testStrip - 1;
   return ( testStrip < state.det().getOffset() || (( (!state.ADCs.empty())  &&                    // a candidate exists, and
-             (holes > MaxSequentialHoles )       // too many holes if not all are bad strips, and 
+             (holes > MaxSequentialHoles )       // too many holes if not all are bad strips, and
            ) &&
            ( holes > MaxSequentialBad ||       // (too many bad strips anyway, or
-             !state.det().allBadBetween( testStrip, state.lastStripLeft ) // not all holes are bad strips) 
+             !state.det().allBadBetween( testStrip, state.lastStripLeft ) // not all holes are bad strips)
 	     ))
            );
 }
@@ -94,8 +94,8 @@ Clusterizer::candidateEndedRight(State const & state, const uint16_t& testStrip)
   //  std::cout<<"holes"<<holes<<std::endl;
   return ( ( (!state.ADCs.empty())  &&                    // a candidate exists, and
 	     (holes > MaxSequentialHoles )       // too many holes if not all are bad strips, and
-	     ) && 
-	   ( holes > MaxSequentialBad ||       // (too many bad strips anyway, or 
+	     ) &&
+	   ( holes > MaxSequentialBad ||       // (too many bad strips anyway, or
 	     !state.det().allBadBetween( state.lastStripRight, testStrip ) // not all holes are bad strips)
 	   )
 	   );
@@ -108,14 +108,14 @@ Clusterizer::addToCandidateLeft(State & state, uint16_t strip) const {
   if(  adc <= static_cast<uint8_t>( Noise * ChannelThreshold) || state.det().bad(strip) )
     return;
 
-  while( --state.lastStripLeft < strip ) state.ADCs.push_back(0); // pad holes                                                                                                                             
+  while( --state.lastStripLeft < strip ) state.ADCs.push_back(0); // pad holes
 
   state.ADCs.insert( state.ADCs.begin(), adc);
   state.noiseSquared += Noise*Noise;
 }
 
 inline void
-Clusterizer::addToCandidateRight(State & state, uint16_t strip) const { 
+Clusterizer::addToCandidateRight(State & state, uint16_t strip) const {
   float Noise = state.det().noise( strip );
   uint8_t adc = state.det().getADC( strip);
   if(  adc <= static_cast<uint8_t>( Noise * ChannelThreshold) || state.det().bad(strip) )
@@ -135,7 +135,7 @@ Clusterizer::endCandidate(State & state, T& out) const {
     if(chargePerCM(state.ADCs.begin(), state.ADCs.end()) > minGoodCharge)
       return out.initialize(firstStrip(state), state.ADCs.begin(), state.ADCs.end());
   }
-  clearCandidate(state);  
+  clearCandidate(state);
 }
 
 inline bool
@@ -149,7 +149,7 @@ Clusterizer::applyGains(State & state) const {
   uint16_t strip = firstStrip(state);
   for( auto &  adc :  state.ADCs) {
     auto charge = int( float(adc)/state.det().gain(strip++) + 0.5f ); //adding 0.5 turns truncation into rounding
-    if(adc < 254) adc = ( charge > 1022 ? 255 : 
+    if(adc < 254) adc = ( charge > 1022 ? 255 :
 			  ( charge >  253 ? 254 : charge ));
   }
 }
@@ -170,12 +170,12 @@ Clusterizer::appendBadNeighbors(State & state) const {
 
 //void
 //Clusterizer::stripByStripAdd(State & state, uint16_t strip, uint8_t adc, std::vector<SiStripCluster>& out) const {
-  
+
 //  if(candidateEnded_right(state,strip)) endCandidate(state,out);
 //  addToCandidate(state, SiStripDigi(strip,adc));
 //}
 
-void 
+void
 Clusterizer::findLeftBoundary(State & state, uint16_t strip) const {
   strip--;
   //std::cout <<"left strip in"<<strip;
@@ -196,7 +196,7 @@ Clusterizer::findRightBoundary(State & state, uint16_t strip) const{
     //std::cout <<"right strip mid"<<strip;
   }
   //std::cout <<"right strip out"<<strip << std::endl;
-} 
+}
 
 bool
 Clusterizer::seedStrip(State& state, uint16_t strip) const {
@@ -205,19 +205,20 @@ Clusterizer::seedStrip(State& state, uint16_t strip) const {
   return  adc >= static_cast<uint8_t>( Noise * SeedThreshold);
 }
 
-void 
+void
 Clusterizer::findCluster(State & state, uint16_t strip, SiStripCluster& cluster) const {
   state.lastStripLeft = strip;
   state.lastStripRight = strip;
   float Noise = state.det().noise( strip );
   uint8_t adc = state.det().getADC(strip);
   state.ADCs.push_back( adc );
+  state.noiseSquared += Noise*Noise;
   findLeftBoundary(state, strip);
   findRightBoundary(state, strip);
   endCandidate(state, cluster);
 }
 
 //void
-//Clusterizer::stripByStripEnd(State & state, std::vector<SiStripCluster>& out) const { 
+//Clusterizer::stripByStripEnd(State & state, std::vector<SiStripCluster>& out) const {
 //  endCandidate(state, out);
 //}

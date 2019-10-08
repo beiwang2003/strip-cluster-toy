@@ -70,7 +70,7 @@ FEDSet fillFeds()
   std::ifstream fedfile("stripdata.bin", std::ios::in | std::ios::binary);
 
   FEDSet feds;
-  detId_t detid;  
+  detId_t detid;
 
   while (fedfile.read((char*)&detid, sizeof(detid)).gcount() == sizeof(detid)) {
     FEDChannel fed(fedfile);
@@ -85,9 +85,9 @@ fillClusters(detId_t idet, Clusterizer& clusterizer, const std::vector<FEDChanne
 {
   static bool first = true;
   std::vector<SiStripCluster> out;
-  std::vector<SiStripDigi> detDigis; 
+  std::vector<SiStripDigi> detDigis;
   std::vector<uint16_t> seedStrips;
-  std::vector<uint16_t> seedStrips_noduplicate; 
+  std::vector<uint16_t> seedStrips_noduplicate;
 
   // start clusterizing for idet
   //auto const & det = clusterizer.stripByStripBegin(idet);
@@ -119,7 +119,7 @@ fillClusters(detId_t idet, Clusterizer& clusterizer, const std::vector<FEDChanne
       float gain=det.gain(strip);
       bool bad=det.bad(strip);
       digidata_out.write((char*)&idet, sizeof(detId_t));
-      digidata_out.write((char*)&fedId, sizeof(fedId_t));	
+      digidata_out.write((char*)&fedId, sizeof(fedId_t));
       digidata_out.write((char*)&fedCh, sizeof(fedCh_t));
       digidata_out.write((char*)&strip, sizeof(uint16_t));
       digidata_out.write((char*)&adc, sizeof(uint16_t));
@@ -137,9 +137,9 @@ fillClusters(detId_t idet, Clusterizer& clusterizer, const std::vector<FEDChanne
     }
   }
 
-  // create non-duplicated seedStrips 
+  // create non-duplicated seedStrips
   for (int i=1; i<seedStrips.size(); i++) {
-    if (seedStrips[i] - seedStrips[i-1]!=1) 
+    if (seedStrips[i] - seedStrips[i-1]!=1)
       seedStrips_noduplicate.push_back(seedStrips[i]);
   }
 
@@ -156,17 +156,17 @@ fillClusters(detId_t idet, Clusterizer& clusterizer, const std::vector<FEDChanne
     }
   }
 
-  if (first) {
+  //if (first) {
     first = false;
-    std::cout << "Printing clusters for detid " << idet << std::endl;
+    //std::cout << "Printing clusters for detid " << idet << std::endl;
     for (const auto& cluster : out) {
-      std::cout << "Cluster " << cluster.firstStrip() << ": ";
+      std::cout <<" det id "<<idet<<" strip " << cluster.firstStrip() << ": ";
       for (const auto& ampl : cluster.amplitudes()) {
         std::cout << (int) ampl << " ";
       }
       std::cout << std::endl;
     }
-  }
+    //}
 
   return out;
 }
@@ -203,8 +203,8 @@ int main()
     digidata_in.read((char*)&adc, sizeof(uint16_t));
     digidata_in.read((char*)&noise, sizeof(float));
     digidata_in.read((char*)&gain, sizeof(float));
-    digidata_in.read((char*)&bad, sizeof(bool));	
-    std::cout<<" detid "<< detid <<" fedId "<<fedId<<" fedCh "<<(int)fedCh<<" strip "<<strip<<" adc "<<adc<<" noise "<<noise<<" gain "<<gain<<" bad "<<bad<<std::endl;
+    digidata_in.read((char*)&bad, sizeof(bool));
+    //    std::cout<<" detid "<< detid <<" fedId "<<fedId<<" fedCh "<<(int)fedCh<<" strip "<<strip<<" adc "<<adc<<" noise "<<noise<<" gain "<<gain<<" bad "<<bad<<std::endl;
   }
 
   return 0;
