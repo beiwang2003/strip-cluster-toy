@@ -110,7 +110,7 @@ inline void
 Clusterizer::addToCandidateLeft(State & state, uint16_t strip) const {
   float Noise = state.det().noise( strip );
   uint8_t adc = state.det().getADC( strip );
-  if(  !state.det().valid( strip ) || Noise ==0 || adc < static_cast<uint8_t>( Noise * ChannelThreshold) || state.det().bad(strip) )
+  if(  !state.det().valid( strip ) || adc < static_cast<uint8_t>( Noise * ChannelThreshold) || state.det().bad(strip) )
     return;
 
   while( --state.lastStripLeft < strip ) state.ADCs.push_back(0); // pad holes
@@ -123,7 +123,7 @@ inline void
 Clusterizer::addToCandidateRight(State & state, uint16_t strip) const {
   float Noise = state.det().noise( strip );
   uint8_t adc = state.det().getADC( strip);
-  if( !state.det().valid( strip ) || Noise ==0 || adc < static_cast<uint8_t>( Noise * ChannelThreshold) || state.det().bad(strip) )
+  if( !state.det().valid( strip ) || adc < static_cast<uint8_t>( Noise * ChannelThreshold) || state.det().bad(strip) )
     return;
 
   //std::cout<<"strip"<<strip<<"noise"<<Noise<<"adc"<<(int)adc<<"lastStripRight"<<state.lastStripRight<<std::endl;
