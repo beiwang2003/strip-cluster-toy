@@ -134,10 +134,12 @@ fillClusters(detId_t idet, Clusterizer& clusterizer, const std::vector<FEDChanne
     Clusterizer::State state(det);
     if (clusterizer.seedStrip(state, digi.strip())) {
       seedStrips.push_back(digi.strip());
+      //std::cout<<"detID="<<idet<<"seed strip="<<digi.strip()<<std::endl;
     }
   }
 
   // create non-duplicated seedStrips
+  if (!seedStrips.empty()) seedStrips_noduplicate.push_back(seedStrips[0]);
   for (int i=1; i<seedStrips.size(); i++) {
     if (seedStrips[i] - seedStrips[i-1]!=1)
       seedStrips_noduplicate.push_back(seedStrips[i]);
@@ -146,6 +148,7 @@ fillClusters(detId_t idet, Clusterizer& clusterizer, const std::vector<FEDChanne
   // process each seedStrip digi
   //for (auto const& digi : detDigis) {
   for (auto ss : seedStrips_noduplicate) {
+    //std::cout<<"detID="<<idet<<"seed strip="<<ss<<std::endl;
     Clusterizer::State state(det);
     state.reset(det);
     if (clusterizer.seedStrip(state, ss)) {

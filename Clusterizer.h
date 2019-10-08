@@ -18,7 +18,7 @@ public:
   // state of detID
   class Det {
     struct DetStrip {
-    DetStrip():noise_(0), bad_(false) {;} 
+    DetStrip():noise_(0.0f), gain_(0.0f), bad_(false) {;}
       uint16_t strip_;
       float noise_;
       float gain_;
@@ -30,15 +30,19 @@ public:
     float noise(const uint16_t& strip) const { return strips_[strip-offset_].noise_; }
     float gain(const uint16_t& strip)  const { return strips_[strip-offset_].gain_; }
     bool bad(const uint16_t& strip)    const { return strips_[strip-offset_].bad_; }
+    void initBad() { for (int i=0; i<strips_.size(); i++) {strips_[i].bad_=false;}}
     bool allBadBetween(uint16_t L, const uint16_t& R) const { while( ++L < R  &&  bad(L)) {}; return L == R; }
-    uint8_t getADC(const uint16_t& strip) const { return ADCs_[strip-offset_]; } 
-    bool setADC(const uint16_t& strip, const uint16_t& adc) {ADCs_[strip-offset_]=adc;}
+    uint8_t getADC(const uint16_t& strip) const { return ADCs_[strip-offset_]; }
+    bool setADC(const uint16_t& strip, const uint16_t& adc) {ADCs_[strip-offset_]=static_cast<uint8_t>(adc);}
+    bool valid(const uint16_t& strip) const { return valid_[strip-offset_];}
     int getOffset() const {return offset_; }
+    int getLastStripID() const {return strips_[strips_.size()-1].strip_;}
     detId_t id() const { return id_; }
   private:
     std::vector<DetStrip> strips_;
     std::vector<fedId_t> fedIDs_;
     std::vector<uint8_t> ADCs_;
+    std::vector<bool> valid_;
     detId_t id_ = 0;
     int offset_ = 0;
   };
@@ -51,9 +55,9 @@ public:
     void reset(Det const& idet) {
       mp_det = &idet;
       ADCs.clear();
-      lastStripLeft = 0; lastStripRight = 0; noiseSquared = 0; //candidateLacksSeed = true;
+      lastStripLeft = 0; lastStripRight = 0; noiseSquared = 0.0f; //candidateLacksSeed = true;
     }
-    std::vector<uint8_t> ADCs;  
+    std::vector<uint8_t> ADCs;
     uint16_t lastStripLeft=0;
     uint16_t lastStripRight=0;
     float noiseSquared=0;
@@ -102,5 +106,3 @@ private:
   DetSet dets_;
   std::vector<detId_t> detIds_;
 };
-
-

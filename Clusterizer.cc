@@ -33,12 +33,15 @@ Clusterizer::Det::Det(detId_t detid, std::ifstream& file)
     auto last = dets.back().strip_;
     strips_.resize(last - offset_ + 1);
     ADCs_.resize(last - offset_ + 1);
+    valid_.resize(last -offset_ + 1);
     for (int i=0; i<ADCs_.size(); i++) {ADCs_[i] = 0;}
+    initBad();
     //std::cout <<"strips size"<<strips_.size();
     for (const auto& det : dets) {
       auto ind = det.strip_-offset_;
       //std::cout << "strip #" << det.strip_ << " " << "ind" << ind << std::endl;
       strips_[det.strip_-offset_] = det;
+      valid_[det.strip_-offset_] = true;
     }
     //std::cout << std::endl;
   }
@@ -79,7 +82,8 @@ Clusterizer::Det& Clusterizer::getDet(const uint32_t id) {
 inline bool
 Clusterizer::candidateEndedLeft(State const & state, const uint16_t& testStrip) const {
   uint16_t holes = state.lastStripLeft - testStrip - 1;
-  return ( testStrip < state.det().getOffset() || (( (!state.ADCs.empty())  &&                    // a candidate exists, and
+  return ( testStrip < state.det().getOffset() ||
+           (( (!state.ADCs.empty())  &&                    // a candidate exists, and
              (holes > MaxSequentialHoles )       // too many holes if not all are bad strips, and
            ) &&
            ( holes > MaxSequentialBad ||       // (too many bad strips anyway, or
@@ -92,20 +96,21 @@ inline bool
 Clusterizer::candidateEndedRight(State const & state, const uint16_t& testStrip) const {
   uint16_t holes = testStrip - state.lastStripRight - 1;
   //  std::cout<<"holes"<<holes<<std::endl;
-  return ( ( (!state.ADCs.empty())  &&                    // a candidate exists, and
-	     (holes > MaxSequentialHoles )       // too many holes if not all are bad strips, and
-	     ) &&
-	   ( holes > MaxSequentialBad ||       // (too many bad strips anyway, or
-	     !state.det().allBadBetween( state.lastStripRight, testStrip ) // not all holes are bad strips)
-	   )
-	   );
+  return ( testStrip > state.det().getLastStripID() ||
+	  ( (!state.ADCs.empty())  &&                    // a candidate exists, and
+	    (holes > MaxSequentialHoles )       // too many holes if not all are bad strips, and
+	  ) &&
+	  ( holes > MaxSequentialBad ||       // (too many bad strips anyway, or
+	    !state.det().allBadBetween( state.lastStripRight, testStrip ) // not all holes are bad strips)
+	  )
+	 );
 }
 
 inline void
 Clusterizer::addToCandidateLeft(State & state, uint16_t strip) const {
   float Noise = state.det().noise( strip );
   uint8_t adc = state.det().getADC( strip );
-  if(  adc <= static_cast<uint8_t>( Noise * ChannelThreshold) || state.det().bad(strip) )
+  if(  !state.det().valid( strip ) || Noise ==0 || adc < static_cast<uint8_t>( Noise * ChannelThreshold) || state.det().bad(strip) )
     return;
 
   while( --state.lastStripLeft < strip ) state.ADCs.push_back(0); // pad holes
@@ -118,9 +123,10 @@ inline void
 Clusterizer::addToCandidateRight(State & state, uint16_t strip) const {
   float Noise = state.det().noise( strip );
   uint8_t adc = state.det().getADC( strip);
-  if(  adc <= static_cast<uint8_t>( Noise * ChannelThreshold) || state.det().bad(strip) )
+  if( !state.det().valid( strip ) || Noise ==0 || adc < static_cast<uint8_t>( Noise * ChannelThreshold) || state.det().bad(strip) )
     return;
-  //std::cout<<"strip"<<strip<<"noise"<<Noise<<"adc"<<adc<<"lastStripRight"<<state.lastStripRight<<std::endl;
+
+  //std::cout<<"strip"<<strip<<"noise"<<Noise<<"adc"<<(int)adc<<"lastStripRight"<<state.lastStripRight<<std::endl;
   while( ++state.lastStripRight < strip ) state.ADCs.push_back(0); // pad holes
 
   state.ADCs.push_back( adc );
@@ -158,8 +164,8 @@ inline void
 Clusterizer::appendBadNeighbors(State & state) const {
   uint8_t max = MaxAdjacentBad;
   while(0 < max--) {
-    if( state.det().bad( firstStrip(state)-1) ) { state.ADCs.insert( state.ADCs.begin(), 0);  }
-    if( state.det().bad(  state.lastStripRight + 1) ) { state.ADCs.push_back(0); state.lastStripRight++; }
+    if( state.det().bad( firstStrip(state)-1) ) { std::cout<<"bad strip in the left"<<std::endl; state.ADCs.insert( state.ADCs.begin(), 0);  }
+    if( state.det().bad(  state.lastStripRight + 1) ) { std::cout<<"bad strip in the right"<<std::endl; state.ADCs.push_back(0); state.lastStripRight++; }
   }
 }
 
